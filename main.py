@@ -15,6 +15,7 @@ class User:
         self.date = None
         self.time = None
 
+
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
@@ -29,7 +30,8 @@ def process_name_step(message):
     try:
         user_id = message.from_user.id
         user = User(message.text)
-        msg = bot.reply_to(message, 'Quel est votre numéro de téléphone?')
+        user.user_id = user_id
+        msg = bot.reply_to(message, 'Entrez votre numéro en commençant à zéro')
         bot.register_next_step_handler(msg, process_phone_step, user=user, user_id=user_id)
     except Exception :
         bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
@@ -37,13 +39,13 @@ def process_name_step(message):
 def process_phone_step(message, user, user_id):
     try:
         number = message.text
-        if not number.isdigit():
-            msg = bot.reply_to(message, 'l numéro de téléphone doit être un nombre')
+        if not number.isdigit() or len(number) != 10:
+            msg = bot.reply_to(message, 'Le numéro doit être composé de dix chiffres')
             bot.register_next_step_handler(msg, process_phone_step, user=user, user_id=user_id)
             return
         user.number = number
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        markup.add('Pedetour J.', 'Faraire S.')
+        markup.add('Pedeutour J.', 'Faraire S.')
         msg = bot.reply_to(message, 'Avec quel salarié souhaitez-vous vous inscrire ?', reply_markup=markup)
         bot.register_next_step_handler(msg, process_employee_step, user=user, user_id=user_id)
     except Exception:
@@ -52,16 +54,49 @@ def process_phone_step(message, user, user_id):
 def process_employee_step(message, user, user_id):
     try:
         employee = message.text.upper()
-        if employee in ['FARAIRE S.', 'PEDETOUR J.']:
+        if employee in ['FARAIRE S.', 'PEDEUTOUR J.']:
             user.employee = employee
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            markup.add('Oui', 'Non')
-            msg = bot.send_message(message.chat.id, 'Les données sont-elles correctes ? ' + f'\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}', reply_markup=markup)
-            bot.register_next_step_handler(msg, process_check_data, user=user, user_id=user_id)
+            markup.add('08/01','09/01','10/01','11/01','12/11')
+            msg = bot.send_message(message.chat.id, 'Sélectionner une date', reply_markup=markup)
+            bot.register_next_step_handler(msg, process_date_step, user=user, user_id=user_id)
         else:
             msg = bot.reply_to(message, 'Je ne vous ai pas compris, merci de réitérer votre demande')
             bot.register_next_step_handler(msg, process_employee_step, user=user, user_id=user_id)
+    except Exception:
+        bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
+
+def process_date_step(message, user, user_id):
+    try:
+        date = message.text
+        if date in ['08/01','09/01','10/01','11/01','12/11']:
+            user.date = date
+            types.ReplyKeyboardRemove(selective=False)
+            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+            markup.add('10-00','11-00','12-00','12-45','13-00','14-00','15-00','16-00')
+            msg = bot.send_message(message.chat.id, "Préciser l'heure", reply_markup=markup)
+            bot.register_next_step_handler(msg, process_time_step, user=user, user_id=user_id)
+        else:
+            msg = bot.reply_to(message, 'Je ne vous ai pas compris, merci de réitérer votre demande')
+            bot.register_next_step_handler(msg, process_date_step, user=user, user_id=user_id)
+    except Exception:
+        bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
+
+
+def process_time_step(message, user, user_id):
+    try:
+        time = message.text
+        if time in ['10-00','11-00','12-00','12-45','13-00','14-00','15-00','16-00']:
+            user.time = time
+            types.ReplyKeyboardRemove(selective=False)
+            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+            markup.add('Oui', 'Non')
+            msg = bot.send_message(message.chat.id,'Les données sont-elles correctes ? ' + f'\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}\nDate: {user.date}\nTemps: {user.time} ', reply_markup=markup)
+            bot.register_next_step_handler(msg, process_check_data, user=user, user_id=user_id)
+        else:
+            msg = bot.reply_to(message, 'Je ne vous ai pas compris, merci de réitérer votre demande')
+            bot.register_next_step_handler(msg, process_time_step, user=user, user_id=user_id)
     except Exception:
         bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
 
@@ -71,10 +106,10 @@ def process_check_data(message, user, user_id):
         if answer == 'oui':
             bot.reply_to(message, 'Merci!')
             user.answer = answer
-            bot.send_message(tokens.admChatId, f'{user.employee}, Nouvelle candidature reçue:\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}')
+            bot.send_message(tokens.admChatId, f'{user.employee}, Nouvelle candidature reçue:\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}\nDate: {user.date}\nTemps: {user.time} ')
             markup = types.InlineKeyboardMarkup(row_width=2)
-            btn_confirm = types.InlineKeyboardButton('Confirmer',callback_data=f'confirm_{user.name}_{user.number}_{user.employee}_{user_id}')
-            btn_reject = types.InlineKeyboardButton('Rejeter', callback_data='reject')
+            btn_confirm = types.InlineKeyboardButton('Confirmer', callback_data=f'confirm_{user.name}_{user.number}_{user.employee}_{user.date}_{user.time}_{user_id}')
+            btn_reject = types.InlineKeyboardButton('Rejeter', callback_data=f'reject_{user.name}_{user.number}_{user.employee}_{user.date}_{user.time}_{user_id}')
             markup.add(btn_confirm, btn_reject)
             bot.send_message(tokens.admChatId, 'Confirmer ou rejeter la candidature ?', reply_markup=markup)
         elif answer == 'non':
@@ -92,16 +127,15 @@ def callback_query(call):
     user_id = call.from_user.id
     if call.data.startswith('confirm'):
         # callbackdata for parts
-        _, name, age, employee, _ = call.data.split('_', 4)
+        _, name, number, employee, date, time, _ = call.data.split('_')
         bot.send_message(user_id, 'Votre demande est confirmée!')
-        confirmation_message = f'Candidat confirmé:\nNom: {name}\nNuméro de téléphone: {age}\nEmployé: {employee}'
+        confirmation_message = (f'Candidat confirmé:\nNom: {name}\nNuméro de téléphone: {number}\nEmployé: {employee}\nDate: {date}\nTemps{time}')
         bot.send_message(tokens.admChatId, confirmation_message)
         print('button confirm pressed')
     elif call.data == 'reject':
         print('button reject pressed')
         bot.send_message(user_id, 'Votre demande est rejetée.')
         bot.send_message(tokens.admChatId, 'Candidat rejeté')
-
 
 
 
