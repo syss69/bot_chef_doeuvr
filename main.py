@@ -10,8 +10,10 @@ user_dict = {}
 class User:
     def __init__(self, name):
         self.name = name
-        self.age = None
-        self.sex = None
+        self.number = None
+        self.employee = None
+        self.date = None
+        self.time = None
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
