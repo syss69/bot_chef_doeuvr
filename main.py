@@ -4,6 +4,7 @@ from telebot import types
 import tokens
 
 bot = telebot.TeleBot(tokens.TOKEN)
+admChatId = (tokens.admChatId)
 
 user_dict = {}
 
@@ -31,7 +32,7 @@ def process_name_step(message):
         user_id = message.from_user.id
         user = User(message.text)
         user.user_id = user_id
-        msg = bot.reply_to(message, 'Entrez votre numéro en commençant à zéro')
+        msg = bot.reply_to(message, 'Entrez votre numéro en commençant par zéro')
         bot.register_next_step_handler(msg, process_phone_step, user=user, user_id=user_id)
     except Exception :
         bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
@@ -58,7 +59,7 @@ def process_employee_step(message, user, user_id):
             user.employee = employee
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            markup.add('08/01','09/01','10/01','11/01','12/11')
+            markup.add('08/01','09/01','10/01','11/01','12/01')
             msg = bot.send_message(message.chat.id, 'Sélectionner une date', reply_markup=markup)
             bot.register_next_step_handler(msg, process_date_step, user=user, user_id=user_id)
         else:
@@ -70,7 +71,7 @@ def process_employee_step(message, user, user_id):
 def process_date_step(message, user, user_id):
     try:
         date = message.text
-        if date in ['08/01','09/01','10/01','11/01','12/11']:
+        if date in ['08/01','09/01','10/01','11/01','12/01']:
             user.date = date
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -106,12 +107,13 @@ def process_check_data(message, user, user_id):
         if answer == 'oui':
             bot.reply_to(message, 'Merci!')
             user.answer = answer
-            bot.send_message(tokens.admChatId, f'{user.employee}, Nouvelle candidature reçue:\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}\nDate: {user.date}\nTemps: {user.time} ')
+            bot.send_message(admChatId, f'{user.employee}, Nouvelle candidature reçue:\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}\nDate: {user.date}\nTemps: {user.time} ')
             markup = types.InlineKeyboardMarkup(row_width=2)
             btn_confirm = types.InlineKeyboardButton('Confirmer', callback_data=f'confirm_{user.name}_{user.number}_{user.employee}_{user.date}_{user.time}_{user_id}')
             btn_reject = types.InlineKeyboardButton('Rejeter', callback_data=f'reject_{user.name}_{user.number}_{user.employee}_{user.date}_{user.time}_{user_id}')
             markup.add(btn_confirm, btn_reject)
-            bot.send_message(tokens.admChatId, 'Confirmer ou rejeter la candidature ?', reply_markup=markup)
+            askAdmMsg = ('Confirmer ou rejeter la candidature ?')
+            bot.send_message(admChatId, askAdmMsg, reply_markup=markup)
         elif answer == 'non':
             bot.reply_to(message, "Recommençons")
             send_welcome(message)
@@ -125,16 +127,17 @@ def process_check_data(message, user, user_id):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     user_id = call.from_user.id
+    _, name, number, employee, date, time, _ = call.data.split('_')
     if call.data.startswith('confirm'):
-        _, name, number, employee, date, time, _ = call.data.split('_')
         bot.send_message(user_id, f'Votre demande est confirmée!\nEmployé: {employee}\nDate: {date}\nTemps: {time}')
         confirmation_message = (f'Candidat confirmé:\nNom: {name}\nNuméro de téléphone: {number}\nEmployé: {employee}\nDate: {date}\nTemps: {time}')
-        bot.send_message(tokens.admChatId, confirmation_message)
+        bot.send_message(admChatId, confirmation_message)
+        bot.delete_message(admChatId, call.message.message_id)
         print('button confirm pressed')
     elif call.data.startswith('reject'):
-        _, name, number, employee, date, time, _ = call.data.split('_')
-        bot.send_message(user_id, 'Votre demande est rejetée.')
-        bot.send_message(tokens.admChatId, f'Candidat {name} rejeté')
+        bot.send_message(user_id, f'Votre demande:\nEmployé: {employee}\nDate: {date}\nTemps: {time}\nest rejetée.')
+        bot.send_message(admChatId, f'Candidat {name} rejeté')
+        bot.delete_message(admChatId, call.message.message_id)
         print('button reject pressed')
 
 
