@@ -126,16 +126,17 @@ def process_check_data(message, user, user_id):
 def callback_query(call):
     user_id = call.from_user.id
     if call.data.startswith('confirm'):
-        # callbackdata for parts
         _, name, number, employee, date, time, _ = call.data.split('_')
-        bot.send_message(user_id, 'Votre demande est confirmée!')
-        confirmation_message = (f'Candidat confirmé:\nNom: {name}\nNuméro de téléphone: {number}\nEmployé: {employee}\nDate: {date}\nTemps{time}')
+        bot.send_message(user_id, f'Votre demande est confirmée!\nEmployé: {employee}\nDate: {date}\nTemps: {time}')
+        confirmation_message = (f'Candidat confirmé:\nNom: {name}\nNuméro de téléphone: {number}\nEmployé: {employee}\nDate: {date}\nTemps: {time}')
         bot.send_message(tokens.admChatId, confirmation_message)
         print('button confirm pressed')
-    elif call.data == 'reject':
-        print('button reject pressed')
+    elif call.data.startswith('reject'):
+        _, name, number, employee, date, time, _ = call.data.split('_')
         bot.send_message(user_id, 'Votre demande est rejetée.')
-        bot.send_message(tokens.admChatId, 'Candidat rejeté')
+        bot.send_message(tokens.admChatId, f'Candidat {name} rejeté')
+        print('button reject pressed')
+
 
 
 
