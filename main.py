@@ -8,7 +8,7 @@ admChatId = (tokens.admChatId)
 
 user_dict = {}
 
-class User:
+class User:                        #Informations nécessaires pour faire une demande//Information needed to make a request
     def __init__(self, name):
         self.name = name
         self.number = None
@@ -27,7 +27,7 @@ Quel est Votre nom et prenom?
     bot.clear_step_handler(message)
     bot.register_next_step_handler(msg, process_name_step)
 
-def process_name_step(message):
+def process_name_step(message):            #Toutes les fonctions fonctionnent de la même manière : gérer la réponse de l'utilisateur et envoyer la question suivante//All functions works at same way: handle user responce and send next question
     try:
         user_id = message.from_user.id
         user = User(message.text)
@@ -40,7 +40,7 @@ def process_name_step(message):
 def process_phone_step(message, user, user_id):
     try:
         number = message.text
-        if not number.isdigit() or len(number) != 10:
+        if not number.isdigit() or len(number) != 10:            #vérifiez si le numéro est réel et non une chaîne comme 'asfjz5423'//check if numer is real and not a string like 'asfjz5423'
             msg = bot.reply_to(message, 'Le numéro doit être composé de dix chiffres')
             bot.register_next_step_handler(msg, process_phone_step, user=user, user_id=user_id)
             return
@@ -59,7 +59,7 @@ def process_employee_step(message, user, user_id):
             user.employee = employee
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            markup.add('08/01','09/01','10/01','11/01','12/01')
+            markup.add('08/01','09/01','10/01','11/01','12/01')        #ici les dates sont statiques, je vais le retravailler : l'administration fixera elle-même les dates libres//here dates are static, i will rework it: administration will set free dates by themselves
             msg = bot.send_message(message.chat.id, 'Sélectionner une date', reply_markup=markup)
             bot.register_next_step_handler(msg, process_date_step, user=user, user_id=user_id)
         else:
@@ -71,7 +71,7 @@ def process_employee_step(message, user, user_id):
 def process_date_step(message, user, user_id):
     try:
         date = message.text
-        if date in ['08/01','09/01','10/01','11/01','12/01']:
+        if date in ['08/01','09/01','10/01','11/01','12/01']:        #pareil, il sera retravaillé//same, it will be reworked
             user.date = date
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -125,7 +125,7 @@ def process_check_data(message, user, user_id):
         print('error in check data')
 
 @bot.callback_query_handler(func=lambda call: True)
-def callback_query(call):
+def callback_query(call):            #fonction de rappel : traitement de la réponse de l'administrateur//callback function: processing the administrator responce
     user_id = call.from_user.id
     _, name, number, employee, date, time, _ = call.data.split('_')
     if call.data.startswith('confirm'):
