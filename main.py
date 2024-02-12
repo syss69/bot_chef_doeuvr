@@ -7,6 +7,8 @@ bot = telebot.TeleBot(tokens.TOKEN)
 admChatId = (tokens.admChatId)
 
 user_dict = {}
+aDates = ['12/02','13/02','14/02','15/02','16/02']
+password = "mdp2024"
 
 class User:                        #Informations nécessaires pour faire une demande//Information needed to make a request
     def __init__(self, name):
@@ -15,9 +17,24 @@ class User:                        #Informations nécessaires pour faire une dem
         self.employee = None
         self.date = None
         self.time = None
+'''
+@bot.message_handler(commands=['date'])
+def open_admin(message):
+    msg = bot.reply_to(message, "Entrez le mot de passe administrateur")
+    bot.clear_step_handler(message)
+    bot.register_next_step_handler(msg, change-date)
 
+def change_date(message):
+    input = message.text
+    if input != password:
+        msg = bot.reply_to(message, "Le mot de passe est incorrect")
+        bot.register_next_step_handler(msg, change_date)
+            return
+    else:
+        msg = bot.reply_to(message, "Entrez cinq dates dans format 'jour-mois'")
+        
+   '''     
 
-# Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
     msg = bot.reply_to(message, """\
@@ -59,11 +76,11 @@ def process_employee_step(message, user, user_id):
             user.employee = employee
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            markup.add('08/01','09/01','10/01','11/01','12/01')        #ici les dates sont statiques, je vais le retravailler : l'administration fixera elle-même les dates libres//here dates are static, i will rework it: administration will set free dates by themselves
+            markup.add(aDates[0], aDates[1], aDates[2], aDates[3], aDates[4])        #ici les dates sont statiques, je vais le retravailler : l'administration fixera elle-même les dates libres//here dates are static, i will rework it: administration will set free dates by themselves
             msg = bot.send_message(message.chat.id, 'Sélectionner une date', reply_markup=markup)
             bot.register_next_step_handler(msg, process_date_step, user=user, user_id=user_id)
         else:
-            msg = bot.reply_to(message, 'Je ne vous ai pas compris, merci de réitérer votre demande')
+            msg = bot.reply_to(message, 'Cette personne n existe pas')
             bot.register_next_step_handler(msg, process_employee_step, user=user, user_id=user_id)
     except Exception:
         bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
@@ -71,7 +88,7 @@ def process_employee_step(message, user, user_id):
 def process_date_step(message, user, user_id):
     try:
         date = message.text
-        if date in ['08/01','09/01','10/01','11/01','12/01']:        #pareil, il sera retravaillé//same, it will be reworked
+        if date in aDates:        #pareil, il sera retravaillé//same, it will be reworked
             user.date = date
             types.ReplyKeyboardRemove(selective=False)
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -79,7 +96,7 @@ def process_date_step(message, user, user_id):
             msg = bot.send_message(message.chat.id, "Préciser l'heure", reply_markup=markup)
             bot.register_next_step_handler(msg, process_time_step, user=user, user_id=user_id)
         else:
-            msg = bot.reply_to(message, 'Je ne vous ai pas compris, merci de réitérer votre demande')
+            msg = bot.reply_to(message, 'la date choisie n est pas disponible')
             bot.register_next_step_handler(msg, process_date_step, user=user, user_id=user_id)
     except Exception:
         bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
@@ -96,7 +113,7 @@ def process_time_step(message, user, user_id):
             msg = bot.send_message(message.chat.id,'Les données sont-elles correctes ? ' + f'\nNom: {user.name}\nNuméro de téléphone: {user.number}\nEmployé: {user.employee}\nDate: {user.date}\nTemps: {user.time} ', reply_markup=markup)
             bot.register_next_step_handler(msg, process_check_data, user=user, user_id=user_id)
         else:
-            msg = bot.reply_to(message, 'Je ne vous ai pas compris, merci de réitérer votre demande')
+            msg = bot.reply_to(message, 'Date incorrecte, réessayez')
             bot.register_next_step_handler(msg, process_time_step, user=user, user_id=user_id)
     except Exception:
         bot.reply_to(message, 'Erreur! Utilisez /start pour recommencer')
