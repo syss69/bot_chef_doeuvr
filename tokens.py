@@ -1,2 +1,0 @@
-TOKEN = '6546195325:AAEACQ-VEumKCXjueifFYtZJlvmvskBSlUA'
-admChatId = '-4098054710'
